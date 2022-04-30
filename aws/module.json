@@ -1,0 +1,8 @@
+{
+    "namespace": "@MODULE_NAMESPACE@",
+    "name": "@MODULE_NAME@",
+    "provider": "aws",
+    "version": "@MODULE_VERSION@",
+    "displayName": "AWS AI Service",
+    "description": "MCMA Service that exposes AWS AI Services"
+}
