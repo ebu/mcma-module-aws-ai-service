@@ -7,7 +7,7 @@ import { LambdaWorkerInvoker } from "@mcma/aws-lambda-worker-invoker";
 import { getWorkerFunctionId } from "@mcma/worker-invoker";
 
 const dbTableProvider = new DynamoDbTableProvider();
-const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-sns-trigger", process.env.LogGroupName);
+const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-sns-handler", process.env.LogGroupName);
 const workerInvoker = new LambdaWorkerInvoker();
 
 export async function handler(event: SNSEvent, context: Context) {

@@ -6,15 +6,16 @@ import { v4 as uuidv4 } from "uuid";
 import * as AWS from "aws-sdk";
 
 import { AuthProvider, ResourceManager } from "@mcma/client";
-import { AIJob, Job, JobParameterBag, JobProfile, JobStatus, McmaException, McmaTracker, TransformJob, Utils } from "@mcma/core";
+import { AIJob, Job, JobParameterBag, JobProfile, JobStatus, McmaException, McmaTracker, Utils } from "@mcma/core";
 import { S3Locator } from "@mcma/aws-s3";
 import { awsV4Auth } from "@mcma/aws-client";
-import * as stream from "stream";
 
 const { AwsProfile, AwsRegion } = process.env;
 
 AWS.config.credentials = new AWS.SharedIniFileCredentials({ profile: AwsProfile });
 AWS.config.region = AwsRegion;
+
+const JOB_PROFILE = "AwsTranscription";
 
 const TERRAFORM_OUTPUT = "../../deployment/terraform.output.json";
 
@@ -29,7 +30,6 @@ export function log(entry?: any) {
         console.log(entry);
     }
 }
-
 
 async function uploadFileToBucket(bucket: string, filename: string) {
     const fileStream = fs.createReadStream(filename);
@@ -86,11 +86,11 @@ async function waitForJobCompletion(job: Job, resourceManager: ResourceManager):
 }
 
 async function startJob(resourceManager: ResourceManager, inputFile: S3Locator) {
-    let [jobProfile] = await resourceManager.query(JobProfile, { name: "AwsCelebrityRecognition" });
+    let [jobProfile] = await resourceManager.query(JobProfile, { name: JOB_PROFILE });
 
     // if not found bail out
     if (!jobProfile) {
-        throw new McmaException("JobProfile 'AwsCelebrityRecognition' not found");
+        throw new McmaException(`JobProfile '${JOB_PROFILE}' not found`);
     }
 
     let job = new AIJob({
@@ -100,7 +100,7 @@ async function startJob(resourceManager: ResourceManager, inputFile: S3Locator) 
         }),
         tracker: new McmaTracker({
             "id": uuidv4(),
-            "label": "Test - AwsCelebrityRecognition"
+            "label": `Test - ${JOB_PROFILE}`
         })
     });
 
@@ -117,16 +117,6 @@ async function testJob(resourceManager: ResourceManager, inputFile: S3Locator) {
     job = await waitForJobCompletion(job, resourceManager);
 
     console.log(JSON.stringify(job, null, 2));
-}
-
-function uploadFromStream(s3: AWS.S3, bucket: string, key: string, contentType?: string) {
-    const pass = new stream.PassThrough();
-
-    s3.upload({ Bucket: bucket, Key: key, Body: pass, ContentType: contentType }, function (err: Error, data: any) {
-        console.log(err, data);
-    });
-
-    return pass;
 }
 
 async function main() {

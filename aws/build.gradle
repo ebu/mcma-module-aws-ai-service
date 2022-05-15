@@ -7,11 +7,18 @@ task copyApiHandler(type: Copy) {
     rename { "api-handler.zip" }
 }
 
-task copySnsTrigger(type: Copy) {
-    dependsOn "sns-trigger:build"
-    from file("sns-trigger/build/dist/lambda.zip")
+task copyEventBridgeHandler(type: Copy) {
+    dependsOn "eventbridge-handler:build"
+    from file("eventbridge-handler/build/dist/lambda.zip")
     into "build/staging/lambdas"
-    rename { "sns-trigger.zip" }
+    rename { "eventbridge-handler.zip" }
+}
+
+task copySnsHandler(type: Copy) {
+    dependsOn "sns-handler:build"
+    from file("sns-handler/build/dist/lambda.zip")
+    into "build/staging/lambdas"
+    rename { "sns-handler.zip" }
 }
 
 task copyWorker(type: Copy) {
@@ -22,5 +29,6 @@ task copyWorker(type: Copy) {
 }
 
 build.dependsOn copyApiHandler
-build.dependsOn copySnsTrigger
+build.dependsOn copyEventBridgeHandler
+build.dependsOn copySnsHandler
 build.dependsOn copyWorker

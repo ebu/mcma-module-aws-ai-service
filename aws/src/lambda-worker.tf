@@ -84,10 +84,10 @@ resource "aws_iam_role_policy" "worker" {
         Resource = aws_dynamodb_table.service_table.arn
       },
       {
-        Sid      = "AllowInvokingApiGateway"
+        Sid      = "AllowGettingBucketLocation"
         Effect   = "Allow"
-        Action   = "execute-api:Invoke"
-        Resource = var.apigateway_execute_arns
+        Action   = ["s3:GetBucketLocation"]
+        Resource = var.output_bucket != null ? var.output_bucket.arn : aws_s3_bucket.output[0].arn
       },
       {
         Sid      = "AllowWritingToOutputBucket"
@@ -99,6 +99,12 @@ resource "aws_iam_role_policy" "worker" {
         Sid      = "AllowRekognition"
         Effect   = "Allow"
         Action   = ["rekognition:*"]
+        Resource = "*"
+      },
+      {
+        Sid      = "AllowTranscribe"
+        Effect   = "Allow"
+        Action   = ["transcribe:*"]
         Resource = "*"
       },
       {
@@ -131,6 +137,15 @@ resource "aws_iam_role_policy" "worker" {
           Action   = "sqs:SendMessage"
           Resource = var.dead_letter_config_target
         }
+      ] : [],
+      length(var.execute_api_arns) > 0 ?
+      [
+        {
+          Sid      = "AllowInvokingApiGateway"
+          Effect   = "Allow"
+          Action   = "execute-api:Invoke"
+          Resource = var.execute_api_arns
+        },
       ] : [])
   })
 }
@@ -162,6 +177,7 @@ resource "aws_lambda_function" "worker" {
       OutputBucketPrefix = var.output_bucket_prefix
       RekognitionRole    = aws_iam_role.rekognition.arn
       SnsTopic           = aws_sns_topic.service.arn
+      Prefix             = var.prefix
     }
   }
 

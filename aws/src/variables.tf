@@ -96,8 +96,10 @@ variable "service_registry" {
   })
 }
 
-variable "apigateway_execute_arns" {
-  type = list(string)
+variable "execute_api_arns" {
+  type        = list(string)
+  description = "Optional ist of api gateway execution arns that will allow you to control which APIs the lambdas are allowed to invoke"
+  default     = ["arn:aws:execute-api:*:*:*"]
 }
 
 #########################

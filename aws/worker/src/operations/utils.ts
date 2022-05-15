@@ -1,4 +1,8 @@
-const { OutputBucketPrefix } = process.env;
+import { S3 } from "aws-sdk";
+import { S3Locator } from "@mcma/aws-s3";
+import { default as axios } from "axios";
+
+const { OutputBucket, OutputBucketPrefix } = process.env;
 
 export function generateFilePrefix(url: string) {
     let filename = new URL(url).pathname;
@@ -14,7 +18,7 @@ export function generateFilePrefix(url: string) {
     return `${OutputBucketPrefix}${new Date().toISOString().substring(0, 19).replace(/[:]/g, "-")}/${filename}`;
 }
 
-export function getFileExtension(url: string) {
+export function getFileExtension(url: string, withDot: boolean = true) {
     let filename = new URL(url).pathname;
     let pos = filename.lastIndexOf("/");
     if (pos >= 0) {
@@ -22,7 +26,43 @@ export function getFileExtension(url: string) {
     }
     pos = filename.lastIndexOf(".");
     if (pos >= 0) {
-        return filename.substring(pos);
+        return filename.substring(pos + (withDot ? 0 : 1));
     }
     return "";
+}
+
+export async function writeOutputFile(filename: string, contents: any, s3: S3): Promise<S3Locator> {
+    const outputFile = new S3Locator({
+        url: s3.getSignedUrl("getObject", {
+            Bucket: OutputBucket,
+            Key: filename,
+            Expires: 12 * 3600
+        })
+    });
+
+    await s3.putObject({
+        Bucket: outputFile.bucket,
+        Key: outputFile.key,
+        Body: JSON.stringify(contents)
+    }).promise();
+
+    return outputFile;
+}
+
+export async function uploadUrlToS3(filename: string, url: string, s3: S3) {
+    const outputFile = new S3Locator({
+        url: s3.getSignedUrl("getObject", {
+            Bucket: OutputBucket,
+            Key: filename,
+            Expires: 12 * 3600
+        })
+    });
+
+    await s3.upload({
+        Bucket: outputFile.bucket,
+        Key: outputFile.key,
+        Body: (await axios.get(url, { responseType: "stream" })).data,
+    }).promise();
+
+    return outputFile;
 }

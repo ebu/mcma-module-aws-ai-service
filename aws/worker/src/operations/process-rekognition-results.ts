@@ -3,10 +3,8 @@ import { getTableName } from "@mcma/data";
 import { ProcessJobAssignmentHelper, ProviderCollection, WorkerRequest } from "@mcma/worker";
 import { S3Locator } from "@mcma/aws-s3";
 import { Rekognition } from "aws-sdk";
-import { generateFilePrefix } from "./utils";
+import { generateFilePrefix, writeOutputFile } from "./utils";
 import { WorkerContext } from "../index";
-
-const { OutputBucket } = process.env;
 
 export async function processRekognitionResult(providers: ProviderCollection, workerRequest: WorkerRequest, ctx: WorkerContext) {
     const jobAssignmentHelper = new ProcessJobAssignmentHelper(
@@ -45,7 +43,12 @@ export async function processRekognitionResult(providers: ProviderCollection, wo
         }
 
         // 3. Get the result from the Rekognition service
-        let results: any;
+        const inputFile = jobAssignmentHelper.jobInput.get<S3Locator>("inputFile");
+
+        const prefix = generateFilePrefix(inputFile.url);
+        let index = 1;
+
+        const outputFiles: S3Locator[] = [];
 
         switch (rekoJobType) {
             case "StartCelebrityRecognition":
@@ -54,69 +57,74 @@ export async function processRekognitionResult(providers: ProviderCollection, wo
                     SortBy: "TIMESTAMP",
                 };
 
-                let celebrityResults: Rekognition.GetCelebrityRecognitionResponse;
-
                 do {
                     const response = await ctx.rekognition.getCelebrityRecognition(celebrityRecognitionParams).promise();
-
-                    if (!celebrityResults) {
-                        celebrityResults = response;
-                    } else {
-                        celebrityResults.Celebrities.push(...response.Celebrities);
-                    }
-
-                    celebrityRecognitionParams.NextToken = celebrityResults.NextToken;
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    celebrityRecognitionParams.NextToken = response.NextToken;
                 } while (celebrityRecognitionParams.NextToken);
-
-                results = celebrityResults;
                 break;
             case "StartFaceDetection":
                 const faceDetectionParams: Rekognition.GetFaceDetectionRequest = {
                     JobId: rekoJobId,
                 };
 
-                let faceDetectionResults: Rekognition.GetFaceDetectionResponse;
-
                 do {
                     const response = await ctx.rekognition.getFaceDetection(faceDetectionParams).promise();
-
-                    if (!faceDetectionResults) {
-                        faceDetectionResults = response;
-                    } else {
-                        faceDetectionResults.Faces.push(...response.Faces);
-                    }
-
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
                     faceDetectionParams.NextToken = response.NextToken;
                 } while (faceDetectionParams.NextToken);
-
-                results = faceDetectionResults;
                 break;
             case "StartLabelDetection":
+                const labelDetectionParams: Rekognition.GetLabelDetectionRequest = {
+                    JobId: rekoJobId,
+                    SortBy: "TIMESTAMP",
+                };
+
+                do {
+                    const response = await ctx.rekognition.getLabelDetection(labelDetectionParams).promise();
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    labelDetectionParams.NextToken = response.NextToken;
+                } while (labelDetectionParams.NextToken);
+                break;
+            case "StartTextDetection":
+                const textDetectionParams: Rekognition.GetTextDetectionRequest = {
+                    JobId: rekoJobId,
+                };
+
+                do {
+                    const response = await ctx.rekognition.getTextDetection(textDetectionParams).promise();
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    textDetectionParams.NextToken = response.NextToken;
+                } while (textDetectionParams.NextToken);
+                break;
             case "StartContentModeration":
-            case "StartPersonTracking":
-            case "StartFaceSearch":
-                throw new McmaException(rekoJobType + " : Not implemented");
+                const contentModerationParams: Rekognition.GetContentModerationRequest = {
+                    JobId: rekoJobId,
+                    SortBy: "TIMESTAMP",
+                };
+
+                do {
+                    const response = await ctx.rekognition.getContentModeration(contentModerationParams).promise();
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    contentModerationParams.NextToken = response.NextToken;
+                } while (contentModerationParams.NextToken);
+                break;
+            case "StartSegmentDetection":
+                const segmentDetectionParams: Rekognition.GetSegmentDetectionRequest = {
+                    JobId: rekoJobId,
+                };
+
+                do {
+                    const response = await ctx.rekognition.getSegmentDetection(segmentDetectionParams).promise();
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    segmentDetectionParams.NextToken = response.NextToken;
+                } while (segmentDetectionParams.NextToken);
+                break;
             default:
-                throw new McmaException("Unknown rekoJobType");
+                throw new McmaException(`Rekognition job type '${rekoJobType} not implemented`);
         }
 
-        const inputFile = jobAssignmentHelper.jobInput.get<S3Locator>("inputFile");
-
-        const outputFile = new S3Locator({
-            url: ctx.s3.getSignedUrl("getObject", {
-                Bucket: OutputBucket,
-                Key: generateFilePrefix(inputFile.url) + ".json",
-                Expires: 12 * 3600
-            })
-        });
-
-        await ctx.s3.putObject({
-            Bucket: outputFile.bucket,
-            Key: outputFile.key,
-            Body: JSON.stringify(results)
-        }).promise();
-
-        jobAssignmentHelper.jobOutput.set("outputFile", outputFile);
+        jobAssignmentHelper.jobOutput.set("outputFiles", outputFiles);
 
         logger.info("Marking JobAssignment as completed");
         await jobAssignmentHelper.complete();
@@ -135,3 +143,4 @@ export async function processRekognitionResult(providers: ProviderCollection, wo
         await mutex.unlock();
     }
 }
+

@@ -7,13 +7,13 @@ resource "aws_sns_topic" "service" {
 }
 
 ############
-# Invoke lambda SNS trigger
+# Invoke lambda SNS handler
 ############
 
 resource "aws_lambda_permission" "service" {
   statement_id  = "AllowExecutionFromSNS"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.sns_trigger.function_name
+  function_name = aws_lambda_function.sns_handler.function_name
   principal     = "sns.amazonaws.com"
   source_arn    = aws_sns_topic.service.arn
 }
@@ -21,7 +21,7 @@ resource "aws_lambda_permission" "service" {
 resource "aws_sns_topic_subscription" "service" {
   topic_arn = aws_sns_topic.service.arn
   protocol  = "lambda"
-  endpoint  = aws_lambda_function.sns_trigger.arn
+  endpoint  = aws_lambda_function.sns_handler.arn
 }
 
 ##############

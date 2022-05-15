@@ -7,8 +7,18 @@ import { DynamoDbTableProvider } from "@mcma/aws-dynamodb";
 import { AwsCloudWatchLoggerProvider } from "@mcma/aws-logger";
 import { awsV4Auth } from "@mcma/aws-client";
 import { AIJob } from "@mcma/core";
-import { celebrityRecognition, processRekognitionResult } from "./operations";
-import { Rekognition, S3 } from "aws-sdk";
+import {
+    celebrityRecognition,
+    contentModeration,
+    faceDetection,
+    labelDetection,
+    processRekognitionResult,
+    processTranscribeResult,
+    segmentDetection,
+    textDetection,
+    transcription
+} from "./operations";
+import { Rekognition, S3, TranscribeService } from "aws-sdk";
 
 const { LogGroupName } = process.env;
 
@@ -28,12 +38,19 @@ const providerCollection = new ProviderCollection({
 
 const processJobAssignmentOperation =
     new ProcessJobAssignmentOperation(AIJob)
-        .addProfile("AwsCelebrityRecognition", celebrityRecognition);
+        .addProfile("AwsCelebrityRecognition", celebrityRecognition)
+        .addProfile("AwsContentModeration", contentModeration)
+        .addProfile("AwsFaceDetection", faceDetection)
+        .addProfile("AwsLabelDetection", labelDetection)
+        .addProfile("AwsSegmentDetection", segmentDetection)
+        .addProfile("AwsTextDetection", textDetection)
+        .addProfile("AwsTranscription", transcription);
 
 const worker =
     new Worker(providerCollection)
         .addOperation(processJobAssignmentOperation)
-        .addOperation("ProcessRekognitionResult", processRekognitionResult);
+        .addOperation("ProcessRekognitionResult", processRekognitionResult)
+        .addOperation("ProcessTranscribeResult", processTranscribeResult);
 
 export async function handler(event: WorkerRequestProperties, context: Context) {
     const logger = loggerProvider.get(context.awsRequestId, event.tracker);
@@ -47,6 +64,7 @@ export async function handler(event: WorkerRequestProperties, context: Context) 
             awsRequestId: context.awsRequestId,
             s3: new AWS.S3({ signatureVersion: "v4" }),
             rekognition: new AWS.Rekognition(),
+            transcribeService: new AWS.TranscribeService(),
         });
     } catch (error) {
         logger.error("Error occurred when handling operation '" + event.operationName + "'");
@@ -61,4 +79,5 @@ export type WorkerContext = {
     awsRequestId: string,
     s3: S3,
     rekognition: Rekognition,
+    transcribeService: TranscribeService
 }

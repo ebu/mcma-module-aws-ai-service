@@ -86,8 +86,8 @@ module "aws_ai_service" {
 
   service_registry = module.service_registry
 
-  apigateway_execute_arns = [
-    "${module.service_registry.aws_apigatewayv2_stage.service_api.execution_arn}/*/*",
+  execute_api_arns = [
+    "${module.service_registry.aws_apigatewayv2_stage.service_api.execution_arn}/GET/*",
     "${module.job_processor.aws_apigatewayv2_stage.service_api.execution_arn}/*/*",
   ]
 

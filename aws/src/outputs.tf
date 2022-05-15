@@ -21,8 +21,104 @@ output "service_definition" {
         optional_input_parameters = []
         output_parameters         = [
           {
-            parameter_name = "outputFile"
-            parameter_type = "S3Locator"
+            parameter_name = "outputFiles"
+            parameter_type = "S3Locator[]"
+          }
+        ]
+      },
+      {
+        name             = "AwsFaceDetection"
+        input_parameters = [
+          {
+            parameter_name = "inputFile"
+            parameter_type = "Locator"
+          }
+        ]
+        optional_input_parameters = []
+        output_parameters         = [
+          {
+            parameter_name = "outputFiles"
+            parameter_type = "S3Locator[]"
+          }
+        ]
+      },
+      {
+        name             = "AwsContentModeration"
+        input_parameters = [
+          {
+            parameter_name = "inputFile"
+            parameter_type = "Locator"
+          }
+        ]
+        optional_input_parameters = []
+        output_parameters         = [
+          {
+            parameter_name = "outputFiles"
+            parameter_type = "S3Locator[]"
+          }
+        ]
+      },
+      {
+        name             = "AwsLabelDetection"
+        input_parameters = [
+          {
+            parameter_name = "inputFile"
+            parameter_type = "Locator"
+          }
+        ]
+        optional_input_parameters = []
+        output_parameters         = [
+          {
+            parameter_name = "outputFiles"
+            parameter_type = "S3Locator[]"
+          }
+        ]
+      },
+      {
+        name             = "AwsTextDetection"
+        input_parameters = [
+          {
+            parameter_name = "inputFile"
+            parameter_type = "Locator"
+          }
+        ]
+        optional_input_parameters = []
+        output_parameters         = [
+          {
+            parameter_name = "outputFiles"
+            parameter_type = "S3Locator[]"
+          }
+        ]
+      },
+      {
+        name             = "AwsSegmentDetection"
+        input_parameters = [
+          {
+            parameter_name = "inputFile"
+            parameter_type = "Locator"
+          }
+        ]
+        optional_input_parameters = []
+        output_parameters         = [
+          {
+            parameter_name = "outputFiles"
+            parameter_type = "S3Locator[]"
+          }
+        ]
+      },
+      {
+        name             = "AwsTranscription"
+        input_parameters = [
+          {
+            parameter_name = "inputFile"
+            parameter_type = "Locator"
+          }
+        ]
+        optional_input_parameters = []
+        output_parameters         = [
+          {
+            parameter_name = "outputFiles"
+            parameter_type = "S3Locator[]"
           }
         ]
       }
