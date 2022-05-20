@@ -1,11 +1,12 @@
 import { S3 } from "aws-sdk";
 import { S3Locator } from "@mcma/aws-s3";
 import { default as axios } from "axios";
+import { Utils } from "@mcma/core";
 
 const { OutputBucket, OutputBucketPrefix } = process.env;
 
 export function generateFilePrefix(url: string) {
-    let filename = new URL(url).pathname;
+    let filename = Utils.parseUrl(url).pathname;
     let pos = filename.lastIndexOf("/");
     if (pos >= 0) {
         filename = filename.substring(pos + 1);
@@ -19,7 +20,7 @@ export function generateFilePrefix(url: string) {
 }
 
 export function getFileExtension(url: string, withDot: boolean = true) {
-    let filename = new URL(url).pathname;
+    let filename = Utils.parseUrl(url).pathname;
     let pos = filename.lastIndexOf("/");
     if (pos >= 0) {
         filename = filename.substring(pos + 1);
