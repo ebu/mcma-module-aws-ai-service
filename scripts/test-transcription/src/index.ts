@@ -19,7 +19,7 @@ const JOB_PROFILE = "AwsTranscription";
 
 const TERRAFORM_OUTPUT = "../../deployment/terraform.output.json";
 
-const MEDIA_FILE = "C:/Media/2015_GF_ORF_00_18_09_conv.mp4";
+const MEDIA_FILE = "C:/Media/Demo/Tom Hanks' Amazing Clint Eastwood Impression - The Graham Norton Show.mp4";
 
 const s3 = new AWS.S3();
 

@@ -29,7 +29,8 @@ export async function transcription(providers: ProviderCollection, jobAssignment
     await uploadUrlToS3(tempKey, inputFile.url, ctx.s3);
 
     logger.info("Building s3 url");
-    const mediaFileUrl = await buildS3Url(outputBucket, tempKey, ctx.s3);
+    const mediaFileUrl = `s3://${outputBucket}/${tempKey}`;
+    logger.info(mediaFileUrl);
 
     logger.info("Starting transcription");
 
