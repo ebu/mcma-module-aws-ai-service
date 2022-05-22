@@ -170,6 +170,8 @@ resource "aws_cloudwatch_event_rule" "eventbridge_handler" {
       ]
     }
   })
+
+  tags = var.tags
 }
 
 resource "aws_cloudwatch_event_target" "eventbridge_handler" {

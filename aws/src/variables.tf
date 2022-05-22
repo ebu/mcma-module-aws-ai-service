@@ -30,12 +30,6 @@ variable "dead_letter_config_target" {
   default     = null
 }
 
-variable "output_use_deprecated_s3_locator" {
-  type        = bool
-  description = "Use old S3Locator instead of newer S3Locator as output type"
-  default     = false
-}
-
 #########################
 # Output bucket
 #########################
