@@ -11,7 +11,7 @@ export async function segmentDetection(providers: ProviderCollection, jobAssignm
     const logger = jobAssignmentHelper.logger;
     const jobInput = jobAssignmentHelper.jobInput;
 
-    const inputFile = jobInput.get<S3Locator>("inputFile");
+    const inputFile = jobInput.inputFile as S3Locator;
     const jobGuid = jobAssignmentHelper.jobAssignmentDatabaseId.substring(jobAssignmentHelper.jobAssignmentDatabaseId.lastIndexOf("/") + 1);
 
     const outputBucket = configVariables.get("OutputBucket");

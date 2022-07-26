@@ -12,7 +12,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
     const logger = jobAssignmentHelper.logger;
     const jobInput = jobAssignmentHelper.jobInput;
 
-    const inputFile = jobInput.get<S3Locator>("inputFile");
+    const inputFile = jobInput.inputFile as S3Locator;
     const jobGuid = jobAssignmentHelper.jobAssignmentDatabaseId.substring(jobAssignmentHelper.jobAssignmentDatabaseId.lastIndexOf("/") + 1);
 
     const acceptedFileExtensions = ["mp3", "mp4", "wav", "flac", "ogg", "amr", "webm"];
@@ -96,7 +96,7 @@ export async function processTranscribeResult(providers: ProviderCollection, wor
 
         const outputFiles: S3Locator[] = [];
 
-        const inputFile = jobAssignmentHelper.jobInput.get<S3Locator>("inputFile");
+        const inputFile = jobAssignmentHelper.jobInput.inputFile as S3Locator;
         const prefix = generateFilePrefix(inputFile.url);
 
         const transcriptUrl = transcriptionJob.TranscriptionJob?.Transcript?.TranscriptFileUri;
@@ -112,7 +112,7 @@ export async function processTranscribeResult(providers: ProviderCollection, wor
             }
         }
 
-        jobAssignmentHelper.jobOutput.set("outputFiles", outputFiles);
+        jobAssignmentHelper.jobOutput.outputFiles = outputFiles;
 
         logger.info("Marking JobAssignment as completed");
         await jobAssignmentHelper.complete();

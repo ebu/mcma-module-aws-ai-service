@@ -43,7 +43,7 @@ export async function processRekognitionResult(providers: ProviderCollection, wo
         }
 
         // 3. Get the result from the Rekognition service
-        const inputFile = jobAssignmentHelper.jobInput.get<S3Locator>("inputFile");
+        const inputFile = jobAssignmentHelper.jobInput.inputFile as S3Locator;
 
         const prefix = generateFilePrefix(inputFile.url);
         let index = 1;
@@ -124,7 +124,7 @@ export async function processRekognitionResult(providers: ProviderCollection, wo
                 throw new McmaException(`Rekognition job type '${rekoJobType} not implemented`);
         }
 
-        jobAssignmentHelper.jobOutput.set("outputFiles", outputFiles);
+        jobAssignmentHelper.jobOutput.outputFiles = outputFiles;
 
         logger.info("Marking JobAssignment as completed");
         await jobAssignmentHelper.complete();
