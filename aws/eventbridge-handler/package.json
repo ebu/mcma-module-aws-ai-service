@@ -4,12 +4,12 @@
     "private": true,
     "license": "Apache-2.0",
     "dependencies": {
-        "@mcma/aws-dynamodb": "0.14.5",
-        "@mcma/aws-lambda-worker-invoker": "0.14.5",
-        "@mcma/aws-logger": "0.14.5",
-        "@mcma/core": "0.14.5",
-        "@mcma/data": "0.14.5",
-        "@mcma/worker-invoker": "0.14.5",
+        "@mcma/aws-dynamodb": "0.14.7",
+        "@mcma/aws-lambda-worker-invoker": "0.14.7",
+        "@mcma/aws-logger": "0.14.7",
+        "@mcma/core": "0.14.7",
+        "@mcma/data": "0.14.7",
+        "@mcma/worker-invoker": "0.14.7",
         "aws-sdk": "^2.1000.0"
     },
     "devDependencies": {
