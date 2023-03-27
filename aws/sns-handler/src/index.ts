@@ -2,12 +2,12 @@ import { Context, SNSEvent } from "aws-lambda";
 import { DynamoDbTableProvider } from "@mcma/aws-dynamodb";
 import { McmaException } from "@mcma/core";
 import { getTableName } from "@mcma/data";
-import { AwsCloudWatchLoggerProvider } from "@mcma/aws-logger";
+import { AwsCloudWatchLoggerProvider, getLogGroupName } from "@mcma/aws-logger";
 import { LambdaWorkerInvoker } from "@mcma/aws-lambda-worker-invoker";
 import { getWorkerFunctionId } from "@mcma/worker-invoker";
 
 const dbTableProvider = new DynamoDbTableProvider();
-const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-sns-handler", process.env.LogGroupName);
+const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-sns-handler", getLogGroupName());
 const workerInvoker = new LambdaWorkerInvoker();
 
 export async function handler(event: SNSEvent, context: Context) {

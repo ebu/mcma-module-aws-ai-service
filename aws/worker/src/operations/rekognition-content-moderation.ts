@@ -14,7 +14,7 @@ export async function contentModeration(providers: ProviderCollection, jobAssign
     const inputFile = jobInput.inputFile as S3Locator;
     const jobGuid = jobAssignmentHelper.jobAssignmentDatabaseId.substring(jobAssignmentHelper.jobAssignmentDatabaseId.lastIndexOf("/") + 1);
 
-    const outputBucket = configVariables.get("OutputBucket");
+    const outputBucket = configVariables.get("OUTPUT_BUCKET");
     const tempKey = generateFilePrefix(inputFile.url) + getFileExtension(inputFile.url);
 
     logger.info(`Copying media file to bucket '${outputBucket}' with key '${tempKey}`);
@@ -32,8 +32,8 @@ export async function contentModeration(providers: ProviderCollection, jobAssign
         ClientRequestToken: jobGuid,
         JobTag: jobGuid,
         NotificationChannel: {
-            RoleArn: configVariables.get("RekognitionRole"),
-            SNSTopicArn: configVariables.get("SnsTopic"),
+            RoleArn: configVariables.get("REKOGNITION_ROLE"),
+            SNSTopicArn: configVariables.get("SNS_TOPIC"),
         }
     };
 

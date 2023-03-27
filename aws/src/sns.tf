@@ -36,14 +36,18 @@ resource "aws_iam_role" "rekognition" {
     Version   = "2012-10-17"
     Statement = [
       {
+        Effect = "Allow"
         Action    = "sts:AssumeRole"
         Principal = {
           Service = "rekognition.amazonaws.com"
         }
-        Effect = "Allow"
       }
     ]
   })
+
+  permissions_boundary = var.iam_permissions_boundary
+
+  tags = var.tags
 }
 
 resource "aws_iam_role_policy" "rekognition" {

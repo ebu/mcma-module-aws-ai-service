@@ -1,13 +1,13 @@
 import { Context, EventBridgeEvent } from "aws-lambda";
 import { DynamoDbTableProvider } from "@mcma/aws-dynamodb";
-import { AwsCloudWatchLoggerProvider } from "@mcma/aws-logger";
+import { AwsCloudWatchLoggerProvider, getLogGroupName } from "@mcma/aws-logger";
 import { LambdaWorkerInvoker } from "@mcma/aws-lambda-worker-invoker";
 import { ConfigVariables, McmaException } from "@mcma/core";
 import { getWorkerFunctionId } from "@mcma/worker-invoker";
 import { getTableName } from "@mcma/data";
 
 const dbTableProvider = new DynamoDbTableProvider();
-const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-eventbridge-handler", process.env.LogGroupName);
+const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-eventbridge-handler", getLogGroupName());
 const workerInvoker = new LambdaWorkerInvoker();
 
 interface TranscribeJobStateChangeDetail {
@@ -26,7 +26,7 @@ export async function handler(event: EventBridgeEvent<string, any>, context: Con
         logger.debug(event);
         logger.debug(context);
 
-        const prefix = configVariables.get("Prefix");
+        const prefix = configVariables.get("PREFIX");
         let jobAssignmentDatabaseId, operationName;
         let jobInfo: {[key: string]: any} = {};
 

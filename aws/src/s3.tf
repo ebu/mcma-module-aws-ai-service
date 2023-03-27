@@ -12,14 +12,11 @@ resource "aws_s3_bucket" "output" {
 
   force_destroy = true
 
-
-
   lifecycle {
     ignore_changes = [
       grant,
       lifecycle_rule,
       logging,
-      policy,
       server_side_encryption_configuration,
     ]
   }
@@ -35,7 +32,7 @@ resource "aws_s3_bucket_policy" "output" {
     Version   = "2012-10-17"
     Statement = [
       {
-        Sid       = "DenyHttpRequests",
+        Sid       = "DenyHttpRequests"
         Effect    = "Deny"
         Principal = "*"
         Action    = "s3:*"
@@ -50,10 +47,10 @@ resource "aws_s3_bucket_policy" "output" {
         }
       },
       {
-        Sid       = "DenyDeprecatedTlsRequests",
-        Effect    = "Deny",
-        Principal = "*",
-        Action    = "s3:*",
+        Sid       = "DenyDeprecatedTlsRequests"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
         Resource  = [
           "arn:aws:s3:::${local.bucket_name_output}",
           "arn:aws:s3:::${local.bucket_name_output}/*"

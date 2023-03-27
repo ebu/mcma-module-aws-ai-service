@@ -1,6 +1,6 @@
 import { ProcessJobAssignmentHelper, ProviderCollection, WorkerRequest } from "@mcma/worker";
 import { AIJob, ConfigVariables, JobStatus, McmaException, ProblemDetail } from "@mcma/core";
-import { buildS3Url, S3Locator } from "@mcma/aws-s3";
+import { S3Locator } from "@mcma/aws-s3";
 import { WorkerContext } from "../index";
 import { generateFilePrefix, getFileExtension, uploadUrlToS3 } from "./utils";
 import { StartTranscriptionJobRequest } from "aws-sdk/clients/transcribeservice";
@@ -22,7 +22,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
         throw new McmaException("Unacceptable input media format");
     }
 
-    const outputBucket = configVariables.get("OutputBucket");
+    const outputBucket = configVariables.get("OUTPUT_BUCKET");
     const tempKey = generateFilePrefix(inputFile.url) + getFileExtension(inputFile.url);
 
     logger.info(`Copying media file to bucket '${outputBucket}' with key '${tempKey}`);
@@ -34,7 +34,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
 
     logger.info("Starting transcription");
 
-    const prefix = configVariables.get("Prefix");
+    const prefix = configVariables.get("PREFIX");
 
     const params: StartTranscriptionJobRequest = {
         TranscriptionJobName: `${prefix}-${jobGuid}`,
