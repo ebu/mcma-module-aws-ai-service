@@ -1,3 +1,7 @@
+import * as AWSXRay from "aws-xray-sdk-core";
+import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { LambdaClient } from "@aws-sdk/client-lambda";
 import { Context, SNSEvent } from "aws-lambda";
 import { DynamoDbTableProvider } from "@mcma/aws-dynamodb";
 import { McmaException } from "@mcma/core";
@@ -6,9 +10,13 @@ import { AwsCloudWatchLoggerProvider, getLogGroupName } from "@mcma/aws-logger";
 import { LambdaWorkerInvoker } from "@mcma/aws-lambda-worker-invoker";
 import { getWorkerFunctionId } from "@mcma/worker-invoker";
 
-const dbTableProvider = new DynamoDbTableProvider();
-const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-sns-handler", getLogGroupName());
-const workerInvoker = new LambdaWorkerInvoker();
+const cloudWatchLogsClient = AWSXRay.captureAWSv3Client(new CloudWatchLogsClient({}));
+const dynamoDBClient = AWSXRay.captureAWSv3Client(new DynamoDBClient({}));
+const lambdaClient = AWSXRay.captureAWSv3Client(new LambdaClient({}));
+
+const dbTableProvider = new DynamoDbTableProvider({}, dynamoDBClient);
+const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-sns-handler", getLogGroupName(), cloudWatchLogsClient);
+const workerInvoker = new LambdaWorkerInvoker(lambdaClient);
 
 export async function handler(event: SNSEvent, context: Context) {
     const logger = loggerProvider.get(context.awsRequestId);
@@ -65,7 +73,7 @@ export async function handler(event: SNSEvent, context: Context) {
                     });
             } catch (error) {
                 logger.error("Failed processing record", record);
-                logger.error(error.toString());
+                logger.error(error);
             }
         }
     } finally {

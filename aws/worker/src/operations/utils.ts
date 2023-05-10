@@ -1,4 +1,6 @@
-import { S3 } from "aws-sdk";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3Locator } from "@mcma/aws-s3";
 import { default as axios } from "axios";
 
@@ -31,38 +33,36 @@ export function getFileExtension(url: string, withDot: boolean = true) {
     return "";
 }
 
-export async function writeOutputFile(filename: string, contents: any, s3: S3): Promise<S3Locator> {
-    const outputFile = new S3Locator({
-        url: s3.getSignedUrl("getObject", {
-            Bucket: OUTPUT_BUCKET,
-            Key: filename,
-            Expires: 12 * 3600
-        })
+export async function writeOutputFile(objectKey: string, contents: any, s3Client: S3Client): Promise<S3Locator> {
+    await s3Client.send(new PutObjectCommand({
+        Bucket: OUTPUT_BUCKET,
+        Key: objectKey,
+        Body: (typeof contents === "string") ? contents : JSON.stringify(contents),
+    }));
+
+    const command = new GetObjectCommand({
+        Bucket: OUTPUT_BUCKET,
+        Key: objectKey,
     });
 
-    await s3.putObject({
-        Bucket: outputFile.bucket,
-        Key: outputFile.key,
-        Body: JSON.stringify(contents)
-    }).promise();
-
-    return outputFile;
+    return new S3Locator({ url: await getSignedUrl(s3Client, command, { expiresIn: 12 * 3600 }) });
 }
 
-export async function uploadUrlToS3(filename: string, url: string, s3: S3) {
-    const outputFile = new S3Locator({
-        url: s3.getSignedUrl("getObject", {
+export async function uploadUrlToS3(objectKey: string, url: string, s3Client: S3Client) {
+    const upload = new Upload({
+        client: s3Client,
+        params: {
             Bucket: OUTPUT_BUCKET,
-            Key: filename,
-            Expires: 12 * 3600
-        })
+            Key: objectKey,
+            Body: (await axios.get(url, { responseType: "stream" })).data,
+        }
+    });
+    await upload.done();
+
+    const command = new GetObjectCommand({
+        Bucket: OUTPUT_BUCKET,
+        Key: objectKey,
     });
 
-    await s3.upload({
-        Bucket: outputFile.bucket,
-        Key: outputFile.key,
-        Body: (await axios.get(url, { responseType: "stream" })).data,
-    }).promise();
-
-    return outputFile;
+    return new S3Locator({ url: await getSignedUrl(s3Client, command, { expiresIn: 12 * 3600 }) });
 }

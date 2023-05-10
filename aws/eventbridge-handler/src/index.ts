@@ -1,3 +1,7 @@
+import * as AWSXRay from "aws-xray-sdk-core";
+import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { LambdaClient } from "@aws-sdk/client-lambda";
 import { Context, EventBridgeEvent } from "aws-lambda";
 import { DynamoDbTableProvider } from "@mcma/aws-dynamodb";
 import { AwsCloudWatchLoggerProvider, getLogGroupName } from "@mcma/aws-logger";
@@ -6,9 +10,13 @@ import { ConfigVariables, McmaException } from "@mcma/core";
 import { getWorkerFunctionId } from "@mcma/worker-invoker";
 import { getTableName } from "@mcma/data";
 
-const dbTableProvider = new DynamoDbTableProvider();
-const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-eventbridge-handler", getLogGroupName());
-const workerInvoker = new LambdaWorkerInvoker();
+const cloudWatchLogsClient = AWSXRay.captureAWSv3Client(new CloudWatchLogsClient({}));
+const dynamoDBClient = AWSXRay.captureAWSv3Client(new DynamoDBClient({}));
+const lambdaClient = AWSXRay.captureAWSv3Client(new LambdaClient({}));
+
+const dbTableProvider = new DynamoDbTableProvider({}, dynamoDBClient);
+const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-eventbridge-handler", getLogGroupName(), cloudWatchLogsClient);
+const workerInvoker = new LambdaWorkerInvoker(lambdaClient);
 
 interface TranscribeJobStateChangeDetail {
     TranscriptionJobName: string,

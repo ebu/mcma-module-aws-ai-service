@@ -1,9 +1,9 @@
+import { StartSegmentDetectionCommand } from "@aws-sdk/client-rekognition";
 import { ProcessJobAssignmentHelper, ProviderCollection } from "@mcma/worker";
 import { AIJob, ConfigVariables } from "@mcma/core";
 import { S3Locator } from "@mcma/aws-s3";
 import { WorkerContext } from "../index";
 import { generateFilePrefix, getFileExtension, uploadUrlToS3 } from "./utils";
-import { StartSegmentDetectionRequest } from "aws-sdk/clients/rekognition";
 
 const configVariables = ConfigVariables.getInstance();
 
@@ -18,11 +18,11 @@ export async function segmentDetection(providers: ProviderCollection, jobAssignm
     const tempKey = generateFilePrefix(inputFile.url) + getFileExtension(inputFile.url);
 
     logger.info(`Copying media file to bucket '${outputBucket}' with key '${tempKey}`);
-    await uploadUrlToS3(tempKey, inputFile.url, ctx.s3);
+    await uploadUrlToS3(tempKey, inputFile.url, ctx.s3Client);
 
     logger.info("Starting segment detection");
 
-    const params: StartSegmentDetectionRequest = {
+    const data = await ctx.rekognitionClient.send(new StartSegmentDetectionCommand({
         SegmentTypes: ["TECHNICAL_CUE", "SHOT"],
         Video: {
             S3Object: {
@@ -36,9 +36,7 @@ export async function segmentDetection(providers: ProviderCollection, jobAssignm
             RoleArn: configVariables.get("REKOGNITION_ROLE"),
             SNSTopicArn: configVariables.get("SNS_TOPIC"),
         }
-    };
-
-    const data = await ctx.rekognition.startSegmentDetection(params).promise();
+    }));
 
     logger.debug(data);
 }

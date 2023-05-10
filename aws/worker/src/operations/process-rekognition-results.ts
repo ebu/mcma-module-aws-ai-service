@@ -1,8 +1,10 @@
+import { GetCelebrityRecognitionCommand, GetCelebrityRecognitionRequest,
+    GetContentModerationCommand, GetContentModerationRequest, GetFaceDetectionCommand, GetFaceDetectionRequest,
+    GetLabelDetectionCommand, GetLabelDetectionRequest, GetSegmentDetectionCommand, GetSegmentDetectionRequest, GetTextDetectionCommand, GetTextDetectionRequest } from "@aws-sdk/client-rekognition";
 import { JobStatus, McmaException, ProblemDetail } from "@mcma/core";
 import { getTableName } from "@mcma/data";
 import { ProcessJobAssignmentHelper, ProviderCollection, WorkerRequest } from "@mcma/worker";
 import { S3Locator } from "@mcma/aws-s3";
-import { Rekognition } from "aws-sdk";
 import { generateFilePrefix, writeOutputFile } from "./utils";
 import { WorkerContext } from "../index";
 
@@ -52,71 +54,71 @@ export async function processRekognitionResult(providers: ProviderCollection, wo
 
         switch (rekoJobType) {
             case "StartCelebrityRecognition":
-                const celebrityRecognitionParams: Rekognition.GetCelebrityRecognitionRequest = {
+                const celebrityRecognitionParams: GetCelebrityRecognitionRequest = {
                     JobId: rekoJobId,
                     SortBy: "TIMESTAMP",
                 };
 
                 do {
-                    const response = await ctx.rekognition.getCelebrityRecognition(celebrityRecognitionParams).promise();
-                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    const response = await ctx.rekognitionClient.send(new GetCelebrityRecognitionCommand(celebrityRecognitionParams));
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3Client));
                     celebrityRecognitionParams.NextToken = response.NextToken;
                 } while (celebrityRecognitionParams.NextToken);
                 break;
             case "StartFaceDetection":
-                const faceDetectionParams: Rekognition.GetFaceDetectionRequest = {
+                const faceDetectionParams: GetFaceDetectionRequest = {
                     JobId: rekoJobId,
                 };
 
                 do {
-                    const response = await ctx.rekognition.getFaceDetection(faceDetectionParams).promise();
-                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    const response = await ctx.rekognitionClient.send(new GetFaceDetectionCommand(faceDetectionParams));
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3Client));
                     faceDetectionParams.NextToken = response.NextToken;
                 } while (faceDetectionParams.NextToken);
                 break;
             case "StartLabelDetection":
-                const labelDetectionParams: Rekognition.GetLabelDetectionRequest = {
+                const labelDetectionParams: GetLabelDetectionRequest = {
                     JobId: rekoJobId,
                     SortBy: "TIMESTAMP",
                 };
 
                 do {
-                    const response = await ctx.rekognition.getLabelDetection(labelDetectionParams).promise();
-                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    const response = await ctx.rekognitionClient.send(new GetLabelDetectionCommand(labelDetectionParams));
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3Client));
                     labelDetectionParams.NextToken = response.NextToken;
                 } while (labelDetectionParams.NextToken);
                 break;
             case "StartTextDetection":
-                const textDetectionParams: Rekognition.GetTextDetectionRequest = {
+                const textDetectionParams: GetTextDetectionRequest = {
                     JobId: rekoJobId,
                 };
 
                 do {
-                    const response = await ctx.rekognition.getTextDetection(textDetectionParams).promise();
-                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    const response = await ctx.rekognitionClient.send(new GetTextDetectionCommand(textDetectionParams));
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3Client));
                     textDetectionParams.NextToken = response.NextToken;
                 } while (textDetectionParams.NextToken);
                 break;
             case "StartContentModeration":
-                const contentModerationParams: Rekognition.GetContentModerationRequest = {
+                const contentModerationParams: GetContentModerationRequest = {
                     JobId: rekoJobId,
                     SortBy: "TIMESTAMP",
                 };
 
                 do {
-                    const response = await ctx.rekognition.getContentModeration(contentModerationParams).promise();
-                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    const response = await ctx.rekognitionClient.send(new GetContentModerationCommand(contentModerationParams));
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3Client));
                     contentModerationParams.NextToken = response.NextToken;
                 } while (contentModerationParams.NextToken);
                 break;
             case "StartSegmentDetection":
-                const segmentDetectionParams: Rekognition.GetSegmentDetectionRequest = {
+                const segmentDetectionParams: GetSegmentDetectionRequest = {
                     JobId: rekoJobId,
                 };
 
                 do {
-                    const response = await ctx.rekognition.getSegmentDetection(segmentDetectionParams).promise();
-                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3));
+                    const response = await ctx.rekognitionClient.send(new GetSegmentDetectionCommand(segmentDetectionParams));
+                    outputFiles.push(await writeOutputFile(`${prefix}_${index++}.json`, response, ctx.s3Client));
                     segmentDetectionParams.NextToken = response.NextToken;
                 } while (segmentDetectionParams.NextToken);
                 break;

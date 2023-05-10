@@ -1,5 +1,10 @@
 import { Context } from "aws-lambda";
 import * as AWSXRay from "aws-xray-sdk-core";
+import { S3Client } from "@aws-sdk/client-s3";
+import { RekognitionClient } from "@aws-sdk/client-rekognition";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
+import { TranscribeClient } from "@aws-sdk/client-transcribe";
 
 import { AuthProvider, ResourceManagerProvider } from "@mcma/client";
 import { ProcessJobAssignmentOperation, ProviderCollection, Worker, WorkerRequest, WorkerRequestProperties } from "@mcma/worker";
@@ -18,13 +23,16 @@ import {
     textDetection,
     transcription
 } from "./operations";
-import { Rekognition, S3, TranscribeService } from "aws-sdk";
 
-const AWS = AWSXRay.captureAWS(require("aws-sdk"));
+const cloudWatchLogsClient = AWSXRay.captureAWSv3Client(new CloudWatchLogsClient({}));
+const dynamoDBClient = AWSXRay.captureAWSv3Client(new DynamoDBClient({}));
+const rekognitionClient = AWSXRay.captureAWSv3Client((new RekognitionClient({})));
+const s3Client = AWSXRay.captureAWSv3Client(new S3Client({}));
+const transcribeClient = AWSXRay.captureAWSv3Client(new TranscribeClient({}));
 
-const authProvider = new AuthProvider().add(awsV4Auth(AWS));
-const dbTableProvider = new DynamoDbTableProvider();
-const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-worker", getLogGroupName());
+const authProvider = new AuthProvider().add(awsV4Auth());
+const dbTableProvider = new DynamoDbTableProvider({}, dynamoDBClient);
+const loggerProvider = new AwsCloudWatchLoggerProvider("aws-ai-service-worker", getLogGroupName(), cloudWatchLogsClient);
 const resourceManagerProvider = new ResourceManagerProvider(authProvider);
 
 const providerCollection = new ProviderCollection({
@@ -60,13 +68,13 @@ export async function handler(event: WorkerRequestProperties, context: Context) 
 
         await worker.doWork(new WorkerRequest(event, logger), {
             awsRequestId: context.awsRequestId,
-            s3: new AWS.S3({ signatureVersion: "v4" }),
-            rekognition: new AWS.Rekognition(),
-            transcribeService: new AWS.TranscribeService(),
+            s3Client,
+            rekognitionClient,
+            transcribeClient,
         });
     } catch (error) {
         logger.error("Error occurred when handling operation '" + event.operationName + "'");
-        logger.error(error.toString());
+        logger.error(error);
     } finally {
         logger.functionEnd(context.awsRequestId);
         await loggerProvider.flush();
@@ -75,7 +83,7 @@ export async function handler(event: WorkerRequestProperties, context: Context) 
 
 export type WorkerContext = {
     awsRequestId: string,
-    s3: S3,
-    rekognition: Rekognition,
-    transcribeService: TranscribeService
+    rekognitionClient: RekognitionClient,
+    s3Client: S3Client,
+    transcribeClient: TranscribeClient
 }

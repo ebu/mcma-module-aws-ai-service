@@ -3,8 +3,8 @@ import { AIJob, ConfigVariables, JobStatus, McmaException, ProblemDetail } from 
 import { S3Locator } from "@mcma/aws-s3";
 import { WorkerContext } from "../index";
 import { generateFilePrefix, getFileExtension, uploadUrlToS3 } from "./utils";
-import { StartTranscriptionJobRequest } from "aws-sdk/clients/transcribeservice";
 import { getTableName } from "@mcma/data";
+import { GetTranscriptionJobCommand, StartTranscriptionJobCommand } from "@aws-sdk/client-transcribe";
 
 const configVariables = ConfigVariables.getInstance();
 
@@ -26,7 +26,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
     const tempKey = generateFilePrefix(inputFile.url) + getFileExtension(inputFile.url);
 
     logger.info(`Copying media file to bucket '${outputBucket}' with key '${tempKey}`);
-    await uploadUrlToS3(tempKey, inputFile.url, ctx.s3);
+    await uploadUrlToS3(tempKey, inputFile.url, ctx.s3Client);
 
     logger.info("Building s3 url");
     const mediaFileUrl = `s3://${outputBucket}/${tempKey}`;
@@ -36,7 +36,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
 
     const prefix = configVariables.get("PREFIX");
 
-    const params: StartTranscriptionJobRequest = {
+    const data = await ctx.transcribeClient.send(new StartTranscriptionJobCommand( {
         TranscriptionJobName: `${prefix}-${jobGuid}`,
         LanguageCode: "en-US",
         Media: {
@@ -46,9 +46,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
         Subtitles: {
             Formats: ["vtt", "srt"],
         }
-    };
-
-    const data = await ctx.transcribeService.startTranscriptionJob(params).promise();
+    }));
     logger.debug(data);
 }
 
@@ -82,7 +80,7 @@ export async function processTranscribeResult(providers: ProviderCollection, wor
         const jobName = workerRequest.input.jobInfo.TranscriptionJobName;
         const jobStatus = workerRequest.input.jobInfo.TranscriptionJobStatus;
 
-        const transcriptionJob = await ctx.transcribeService.getTranscriptionJob({ TranscriptionJobName: jobName }).promise();
+        const transcriptionJob = await ctx.transcribeClient.send(new GetTranscriptionJobCommand({ TranscriptionJobName: jobName }));
         logger.info(transcriptionJob);
 
         if (jobStatus === "FAILED") {
@@ -103,12 +101,12 @@ export async function processTranscribeResult(providers: ProviderCollection, wor
         const subtitleUrls = transcriptionJob.TranscriptionJob?.Subtitles?.SubtitleFileUris;
 
         if (transcriptUrl) {
-            outputFiles.push(await uploadUrlToS3(prefix + getFileExtension(transcriptUrl), transcriptUrl, ctx.s3));
+            outputFiles.push(await uploadUrlToS3(prefix + getFileExtension(transcriptUrl), transcriptUrl, ctx.s3Client));
         }
 
         if (Array.isArray(subtitleUrls)) {
             for (const subtitleUrl of subtitleUrls) {
-                outputFiles.push(await uploadUrlToS3(prefix + getFileExtension(subtitleUrl), subtitleUrl, ctx.s3));
+                outputFiles.push(await uploadUrlToS3(prefix + getFileExtension(subtitleUrl), subtitleUrl, ctx.s3Client));
             }
         }
 

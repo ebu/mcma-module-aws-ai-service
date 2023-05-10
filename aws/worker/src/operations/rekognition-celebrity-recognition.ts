@@ -1,9 +1,9 @@
+import { StartCelebrityRecognitionCommand } from "@aws-sdk/client-rekognition";
 import { ProcessJobAssignmentHelper, ProviderCollection } from "@mcma/worker";
 import { AIJob, ConfigVariables } from "@mcma/core";
 import { S3Locator } from "@mcma/aws-s3";
 import { WorkerContext } from "../index";
 import { generateFilePrefix, getFileExtension, uploadUrlToS3 } from "./utils";
-import { StartCelebrityRecognitionRequest } from "aws-sdk/clients/rekognition";
 
 const configVariables = ConfigVariables.getInstance();
 
@@ -18,11 +18,11 @@ export async function celebrityRecognition(providers: ProviderCollection, jobAss
     const tempKey = generateFilePrefix(inputFile.url) + getFileExtension(inputFile.url);
 
     logger.info(`Copying file to bucket '${outputBucket}' with key '${tempKey}`);
-    await uploadUrlToS3(tempKey, inputFile.url, ctx.s3);
+    await uploadUrlToS3(tempKey, inputFile.url, ctx.s3Client);
 
     logger.info("Starting celebrity recognition");
 
-    const params: StartCelebrityRecognitionRequest = {
+    const data = await ctx.rekognitionClient.send(new StartCelebrityRecognitionCommand({
         Video: {
             S3Object: {
                 Bucket: outputBucket,
@@ -35,9 +35,7 @@ export async function celebrityRecognition(providers: ProviderCollection, jobAss
             RoleArn: configVariables.get("REKOGNITION_ROLE"),
             SNSTopicArn: configVariables.get("SNS_TOPIC"),
         }
-    };
-
-    const data = await ctx.rekognition.startCelebrityRecognition(params).promise();
+    }));
 
     logger.debug(data);
 }
